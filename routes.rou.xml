@@ -1,0 +1,53 @@
+<routes>
+    <vType id="car" accel="0.8" decel="4.5" sigma="0.5" length="5" maxSpeed="13.9"/>
+
+    <flow id="SN" begin="0" vehsPerHour="1000" type="car" color="red">
+        <route edges="SO ON"/>
+    </flow>
+
+    <flow id="SE" begin="0" vehsPerHour="1000" type="car" color="red">
+        <route edges="SO OE"/>
+    </flow>
+
+    <flow id="SW" begin="0" vehsPerHour="1000" type="car" color="red">
+        <route edges="SO OW"/>
+    </flow>
+
+    <flow id="WN" begin="0" vehsPerHour="1000" type="car" color="green">
+        <route edges="WO ON"/>
+    </flow>
+
+    <flow id="WE" begin="0" vehsPerHour="1000" type="car" color="green">
+        <route edges="WO OE"/>
+    </flow>
+
+    <flow id="WS" begin="0" vehsPerHour="1000" type="car" color="green">
+        <route edges="WO OS"/>
+    </flow>
+
+    <flow id="EN" begin="0" vehsPerHour="1000" type="car" color="blue">
+        <route edges="EO ON"/>
+    </flow>
+
+    <flow id="EW" begin="0" vehsPerHour="1000" type="car" color="blue">
+        <route edges="EO OW"/>
+    </flow>
+
+    <flow id="ES" begin="0" vehsPerHour="1000" type="car" color="blue">
+        <route edges="EO OS"/>
+    </flow>
+
+    <flow id="NS" begin="0" vehsPerHour="1000" type="car" color="yellow">
+        <route edges="NO OS"/>
+    </flow>
+
+    <flow id="NE" begin="0" vehsPerHour="1000" type="car" color="yellow">
+        <route edges="NO OE"/>
+    </flow>
+
+    <flow id="NW" begin="0" vehsPerHour="1000" type="car" color="yellow">
+        <route edges="NO OW"/>
+    </flow>
+
+
+</routes>

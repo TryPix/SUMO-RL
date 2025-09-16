@@ -1,0 +1,11 @@
+<edges>
+    <edge id="WO" from="W" to="O" numLanes="3" speed="13.9"/>
+    <edge id="OE" from="O" to="E" numLanes="3" speed="13.9"/>
+    <edge id="EO" from="E" to="O" numLanes="3" speed="13.9"/>
+    <edge id="OW" from="O" to="W" numLanes="3" speed="13.9"/>
+    <edge id="SO" from="S" to="O" numLanes="3" speed="13.9"/>
+    <edge id="ON" from="O" to="N" numLanes="3" speed="13.9"/>
+    <edge id="NO" from="N" to="O" numLanes="3" speed="13.9"/>
+    <edge id="OS" from="O" to="S" numLanes="3" speed="13.9"/>
+</edges>
+
