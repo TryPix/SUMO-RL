@@ -78,3 +78,32 @@ def pad_and_sort_batch(states_list):
         padded[i, : s.shape[0], :] = s
 
     return torch.FloatTensor(padded).to(device), torch.LongTensor(seq_lengths).to(device)
+
+
+def sort_state(state):
+    """
+    Sort by distances to the intersection point.
+    """
+    if len(state) == 0: return state
+    distances = torch.norm(state[:, :2], dim=1)
+
+    sorted_idx = torch.argsort(distances).to(device)
+    rest_sorted = state[sorted_idx]
+
+    return rest_sorted
+
+
+def move_ego_to_front(state, ego_idx):
+    """
+    Move ego_state to the beginning of the tensor for the LSTM.
+    """
+
+    L = state.shape[0]
+
+    ego = state[ego_idx:ego_idx+1]
+
+    mask = torch.ones(L, dtype=torch.bool, device=device)
+    mask[ego_idx] = False
+    rest = state[mask]
+
+    return torch.cat([ego, rest], dim=0)

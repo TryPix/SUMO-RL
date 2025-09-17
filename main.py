@@ -5,6 +5,7 @@ import torch
 import utils
 import TD3
 import custom_td3
+import custom_replay_buffer
 
 NUM_LANES = 3
 CONTROL_DISTANCE = 100
@@ -43,6 +44,7 @@ def denormalize(x_norm, m, M):
 def get_state():
     state = []
     vehicule_done = {}
+    vids = []
 
     vehicle_ids = traci.vehicle.getIDList()
     collided_ids = traci.simulation.getCollidingVehiclesIDList()
@@ -56,6 +58,8 @@ def get_state():
         # Do not conisder vehicles further than 100m from the intersection
         if np.sqrt(relative_pos_x**2 + relative_pos_y**2) > CONTROL_DISTANCE:
             continue
+
+        vids.append(vid)
 
         speed = traci.vehicle.getSpeed(vid)               
         angle = traci.vehicle.getAngle(vid)
@@ -85,7 +89,7 @@ def get_state():
     
     state = np.array(state)
 
-    return state, vehicule_done, collided_ids
+    return state, vehicule_done, collided_ids, vids
 
 
 
@@ -298,66 +302,81 @@ sumo_config = "simulation.sumocfg"
 
 
 
-def sort_state(state):
-    """
-    Sort by distances to the intersection point.
-    """
-    distances = torch.norm(state[:, :2], dim=1)
 
-    sorted_idx = torch.argsort(distances).to(device)
-    rest_sorted = state[sorted_idx]
-
-    return rest_sorted
-
-
-def move_ego_to_front(state, ego_idx):
-    """
-    Move ego_state to the beginning of the tensor for the LSTM.
-    """
-
-    L = state.shape[0]
-
-    ego = state[ego_idx:ego_idx+1]
-
-    mask = torch.ones(L, dtype=torch.bool, device=device)
-    mask[ego_idx] = False
-    rest = state[mask]
-
-    return torch.cat([ego, rest], dim=0)
 
 
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-traci.start(["sumo-gui", "-c", sumo_config, "--collision.check-junctions"])
+traci.start(["sumo", "-c", sumo_config, "--collision.check-junctions"])
 step = 0
 
-actor = custom_td3.Actor(14, 256, 1).to(device)
-critic = custom_td3.Critic(14, 256).to(device)
+policy = custom_td3.TD3(14, 256, 1, 1e-5, 1e-4)
+replay_buffer = custom_replay_buffer.ReplayBuffer()
+
+start_timesteps = 100
+steps = 1000
+step = 0
 
 traci.simulationStep()
-state1, _, _ = get_state()
+state, _, _, vids = get_state()
+state = utils.sort_state(torch.FloatTensor(state).to(device))
 
-traci.simulationStep()
-state2, _, _ = get_state()
+while step < steps:
+    
+    actions = {}
+    for (i, vid) in enumerate(vids):
+        
+        state_i = utils.move_ego_to_front(state, i)
+        if (step < start_timesteps):
+            action = np.random.uniform(-1, 1)
+        else:
+            action = policy.select_action(state_i.unsqueeze(0))
 
-state1 = torch.FloatTensor(state1).to(device)
-state2 = torch.FloatTensor(state2).to(device)
+        traci.vehicle.setSpeedMode(vid, 96)
+        traci.vehicle.setSpeed(vid, denormalize(action, 0, 13.9))
 
-state1 = sort_state(state1)
-state2 = sort_state(state2)
+        actions[vid] = action
+    
+    traci.simulationStep()
 
-state1 = move_ego_to_front(state1, 2)
-state2 = move_ego_to_front(state2, 2)
-
-
-batch = [state1,  
-         state2]
+    next_state, _, _, vids = get_state()
+    next_state = utils.sort_state(torch.FloatTensor(next_state).to(device))
 
 
-val = actor(batch)
-cvals = critic(batch, val)
+    state = next_state
+
+    step += 1
 
 
+
+
+# actor = policy.actor
+# critic = policy.critic
+
+# traci.simulationStep()
+# state1, _, _ = get_state()
+
+# traci.simulationStep()
+# state2, _, _ = get_state()
+
+# state1 = torch.FloatTensor(state1).to(device)
+# state2 = torch.FloatTensor(state2).to(device)
+
+# state1 = utils.sort_state(state1)
+# state2 = utils.sort_state(state2)
+
+# state1 = utils.move_ego_to_front(state1, 2)
+# state2 = utils.move_ego_to_front(state2, 2)
+
+
+# batch = [state1,  
+#          state2]
+
+
+# val = actor(batch)
+# cvals = critic(batch, val)
+
+# print(val, cvals)
 
 traci.close()

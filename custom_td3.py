@@ -48,7 +48,7 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_size, lstm_hidden_size):
+    def __init__(self, state_size, lstm_hidden_size, action_dimension):
         super(Critic, self).__init__()
     
         self.lstm = nn.LSTM(input_size=state_size,
@@ -57,13 +57,13 @@ class Critic(nn.Module):
                             batch_first=False)
 
         # Q1 
-        self.fc1 = nn.Linear(state_size + lstm_hidden_size + 1, 1024)
+        self.fc1 = nn.Linear(state_size + lstm_hidden_size + action_dimension, 1024)
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 256)
         self.fc4 = nn.Linear(256, 1)
 
         # Q2
-        self.fc5 = nn.Linear(state_size + lstm_hidden_size + 1, 1024)
+        self.fc5 = nn.Linear(state_size + lstm_hidden_size + action_dimension, 1024)
         self.fc6 = nn.Linear(1024, 512)
         self.fc7 = nn.Linear(512, 256)
         self.fc8 = nn.Linear(256, 1)
@@ -95,3 +95,27 @@ class Critic(nn.Module):
         q2 = self.fc8(q2)
 
         return q1, q2
+
+
+class TD3(object):
+
+    def __init__(self,
+                 state_size, 
+                 lstm_hidden_size,
+                 action_dimension,
+                 learning_rate_actor,
+                 learning_rate_critic):
+        self.actor = Actor(state_size, lstm_hidden_size, action_dimension).to(device)
+        self.actor_target = copy.deepcopy(self.actor)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=learning_rate_actor)
+
+        self.critic = Critic(state_size, lstm_hidden_size, action_dimension).to(device)
+        self.critic_target = copy.deepcopy(self.critic)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=learning_rate_critic)
+    
+    def select_action(self, state):
+        return self.actor(state).detach().cpu().numpy()
+
+
+    def train(self):
+        ...
